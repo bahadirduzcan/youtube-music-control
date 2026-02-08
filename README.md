@@ -1,5 +1,9 @@
 # YouTube Music Control
 
+APP Screen:
+
+[![ff}](https://i.hizliresim.com/btmx893.jpg)](https://hizliresim.com/btmx893)
+
 > **Control YouTube Music from your Android device over your local network**
 
 A Flutter-based mobile app that remotely controls YouTube Music playback on Windows by directly communicating with the YouTube Music application API. Control playback, view real-time track info, and manage your music experience seamlessly over LAN.
