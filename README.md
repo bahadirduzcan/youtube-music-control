@@ -8,6 +8,8 @@ APP Screen:
 
 A Flutter-based mobile app that remotely controls YouTube Music playback on Windows by directly communicating with the YouTube Music application API. Control playback, view real-time track info, and manage your music experience seamlessly over LAN.
 
+> **🎵 Works with:** [@pear-devs/pear-desktop](https://github.com/pear-devs/pear-desktop) - A modern YouTube Music desktop client for Windows with built-in HTTP API support.
+
 ## 🎯 Features
 
 - ⏯️ **Play/Pause Control** – Start, pause, or resume playback with a single tap
@@ -108,8 +110,10 @@ youtube-music-control/
 
 Ensure YouTube Music is installed and has local API enabled:
 
-1. **Install YouTube Music** from Microsoft Store or web version
-2. **Start YouTube Music application** on Windows
+> **📌 Note:** This app is designed to work with [@pear-devs/pear-desktop](https://github.com/pear-devs/pear-desktop) - a YouTube Music desktop application that provides the required HTTP API endpoints.
+
+1. **Install Pear Desktop (YouTube Music)** from [@pear-devs/pear-desktop](https://github.com/pear-devs/pear-desktop)
+2. **Start the application** on Windows
 3. **Verify local API access** (should be running on `http://localhost:8877`)
 
 Check if API is accessible:
