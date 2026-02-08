@@ -109,6 +109,7 @@ Ensure YouTube Music is installed and has local API enabled:
 3. **Verify local API access** (should be running on `http://localhost:8877`)
 
 Check if API is accessible:
+
 ```bash
 curl http://localhost:8877/startPage -H "Authorization: Bearer {authId}"
 ```
@@ -118,12 +119,14 @@ curl http://localhost:8877/startPage -H "Authorization: Bearer {authId}"
 Your Android device needs to know your Windows computer's IP:
 
 **Windows:**
+
 ```bash
 ipconfig
 # Look for "IPv4 Address" under your network adapter (e.g., 192.168.1.48)
 ```
 
 **Mac/Linux:**
+
 ```bash
 ifconfig
 # Look for inet (IPv4) address
@@ -156,6 +159,7 @@ flutter run
 ```
 
 Or for a specific device:
+
 ```bash
 flutter run -d <device_id>
 ```
@@ -175,6 +179,7 @@ Authorization: Bearer bahadir
 ```
 
 **Response:**
+
 ```json
 {
   "title": "Song Title",
@@ -201,6 +206,7 @@ Content-Type: application/json
 ```
 
 **Actions:**
+
 - `play` – Resume playback
 - `pause` – Pause playback
 - `toggle` – Toggle between play and pause
@@ -209,6 +215,7 @@ Content-Type: application/json
 - `stop` – Stop playback
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -221,6 +228,7 @@ Content-Type: application/json
 ### Tech Stack
 
 **Flutter App:**
+
 - **Framework**: Flutter 3.6.0+
 - **State Management**: Riverpod 2.x
 - **Architecture**: Clean Architecture (Data, Domain, Presentation layers)
@@ -228,6 +236,7 @@ Content-Type: application/json
 - **JSON Serialization**: `json_serializable`
 
 **Backend:**
+
 - **YouTube Music REST API** (HTTP)
 - **Local Network Communication** (LAN)
 - **No external server required**
@@ -235,23 +244,27 @@ Content-Type: application/json
 ### Code Structure
 
 **Data Layer** (`lib/data/`)
+
 - Implements repository interfaces
 - Handles API calls and WebSocket communication
 - JSON model serialization/deserialization
 - Manages connection lifecycle
 
 **Domain Layer** (`lib/domain/`)
+
 - Pure business logic entities
 - Repository abstract interfaces
 - No framework dependencies
 
 **Presentation Layer** (`lib/presentation/`)
+
 - Stateless/Stateful widgets
 - Screen-level organization
 - Reusable UI components
 - State consumption through providers
 
 **State Management** (`lib/providers/`)
+
 ```dart
 // Example: Music status provider
 final musicStatusProvider = StreamProvider<MediaStatus>((ref) async* {
@@ -267,11 +280,13 @@ final musicConfigProvider = StateProvider<MusicConfig>((ref) {
 ### Running Tests
 
 Unit tests:
+
 ```bash
 flutter test
 ```
 
 Widget tests:
+
 ```bash
 flutter test -d linux  # or android, ios
 ```
@@ -279,11 +294,13 @@ flutter test -d linux  # or android, ios
 ### Building for Release
 
 **Android APK:**
+
 ```bash
 flutter build apk --release
 ```
 
 **Android App Bundle:**
+
 ```bash
 flutter build appbundle --release
 ```
@@ -297,6 +314,7 @@ flutter test
 ```
 
 Test coverage can be generated with:
+
 ```bash
 flutter test --coverage
 ```
@@ -307,11 +325,13 @@ flutter test --coverage
    - Ensure the desktop app is running and playing or ready to play
 
 2. **Verify API is accessible:**
+
    ```bash
    curl http://localhost:8877/startPage -H "Authorization: Bearer bahadir"
    ```
 
 3. **Run the Flutter app:**
+
    ```bash
    flutter run
    ```
@@ -330,6 +350,7 @@ flutter test --coverage
 **Problem:** Flutter app cannot connect to YouTube Music API
 
 **Solutions:**
+
 - Verify YouTube Music is running on Windows
 - Check if API is accessible: `curl http://localhost:8877/startPage`
 - Confirm correct IP address in `music_providers.dart`
@@ -342,6 +363,7 @@ flutter test --coverage
 **Problem:** 401 Unauthorized response from API
 
 **Solution:**
+
 - Verify `authId` in Flutter matches your setup
 - Check header format: `Authorization: Bearer {authId}`
 - Restart both app and YouTube Music
@@ -351,6 +373,7 @@ flutter test --coverage
 **Problem:** Cannot reach Windows from Android device
 
 **Solutions:**
+
 - Check Wi-Fi signal strength
 - Verify network latency: `ping <windows_ip>` from Android
 - Ensure Windows and Android are on same network (not guest network)
@@ -362,6 +385,7 @@ flutter test --coverage
 **Problem:** Timeout or no response from YouTube Music API
 
 **Solutions:**
+
 - Ensure YouTube Music is fully loaded and visible
 - Check if port 8877 is actually in use
 - Restart YouTube Music Windows application
@@ -384,6 +408,7 @@ All requests to the YouTube Music API use Bearer token authentication:
 - No external service access required
 
 **Best Practices:**
+
 ```dart
 // ✅ Secure: Use environment variables
 const authId = String.fromEnvironment('YOUTUBE_MUSIC_AUTH_ID');
@@ -396,6 +421,7 @@ const authId = 'hardcoded-secret';  // Never do this
 ```
 
 **Recommendations:**
+
 - Keep `authId` in local configuration, not version control
 - Use `.env` files for development
 - Store sensitive config separately per environment
@@ -447,6 +473,7 @@ footer (optional)
 ```
 
 **Types:**
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation
@@ -456,6 +483,7 @@ footer (optional)
 - `test:` Adding tests
 
 **Example:**
+
 ```
 feat: Add volume control to playback UI
 
@@ -493,6 +521,7 @@ This project is licensed under the MIT License – see [LICENSE](LICENSE) file f
 ## 📞 Support
 
 For issues, questions, or suggestions:
+
 - Open an [Issue](../../issues)
 - Check existing documentation in [SETUP.md](SETUP.md)
 - Review [Troubleshooting](#-troubleshooting) section
@@ -504,11 +533,11 @@ For issues, questions, or suggestions:
 **Status:** Active Development  
 **Maintainer:** YouTube Music Control Team
 
-   ```dart
-   host: '192.168.1.X', // Bilgisayarınızın IP adresi
-   port: 8765,
-   apiKey: 'your-api-key-here',
-   ```
+```dart
+host: '192.168.1.X', // Bilgisayarınızın IP adresi
+port: 8765,
+apiKey: 'your-api-key-here',
+```
 
 4. **Android cihazda çalıştır**:
    ```bash
@@ -531,6 +560,7 @@ For issues, questions, or suggestions:
    ```
 
 3. **Service'i başlat**:
+
    ```bash
    dotnet run
    ```
