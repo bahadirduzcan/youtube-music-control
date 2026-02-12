@@ -143,6 +143,11 @@ class MusicApiService {
           final initialStatus = await getStatus();
           _lastStatus = initialStatus;
           _statusController?.add(initialStatus);
+
+          // Start progress timer if playing
+          if (initialStatus.state == PlaybackState.playing) {
+            _startProgress();
+          }
         } catch (e) {
           // Ignore initial fetch errors, WS will provide updates
         }
@@ -395,6 +400,22 @@ class MusicApiService {
         default:
           throw MusicServiceException('Unsupported action: $action');
       }
+
+      // If no status cached yet, fetch it now to ensure UI updates
+      if (_lastStatus == null) {
+        try {
+          final status = await getStatus();
+          _lastStatus = status;
+          _statusController?.add(status);
+
+          // Start progress timer if playing
+          if (status.state == PlaybackState.playing) {
+            _startProgress();
+          }
+        } catch (e) {
+          // Ignore fetch errors, WS will eventually provide updates
+        }
+      }
     } catch (e) {
       rethrow;
     }
@@ -447,6 +468,139 @@ class MusicApiService {
 
   Future<void> setVolume(double volume) async {
     await _setVolume(volume.clamp(0, 100).toDouble());
+  }
+
+  /// Seek to specific position in milliseconds
+  Future<void> seekTo(int positionMs) async {
+    try {
+      // Convert milliseconds to seconds for API
+      final seconds = (positionMs / 1000).round();
+
+      await _post('/api/v1/seek-to', body: {'seconds': seconds});
+
+      // Update local status immediately for better UX
+      final current = _lastStatus;
+      if (current != null) {
+        _lastStatus = MediaStatusModel(
+          track: current.track,
+          state: current.state,
+          positionMs: positionMs,
+        );
+        _statusController?.add(_lastStatus!);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Like the current song
+  Future<void> like() async {
+    await _post('/api/v1/like');
+  }
+
+  /// Dislike the current song
+  Future<void> dislike() async {
+    await _post('/api/v1/dislike');
+  }
+
+  /// Get like state of current song
+  /// Returns 'LIKE', 'DISLIKE', 'INDIFFERENT', or null
+  Future<String?> getLikeState() async {
+    try {
+      final response = await _authorizedRequest(
+        (headers) => http.get(
+          Uri.parse('$_baseUrl/api/v1/like-state'),
+          headers: headers,
+        ),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['state'] as String?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get current queue
+  Future<Map<String, dynamic>?> getQueue() async {
+    try {
+      final response = await _authorizedRequest(
+        (headers) => http.get(
+          Uri.parse('$_baseUrl/api/v1/queue'),
+          headers: headers,
+        ),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 204) {
+        // No queue
+        return null;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get queue info (detailed queue information)
+  Future<Map<String, dynamic>?> getQueueInfo() async {
+    try {
+      final response = await _authorizedRequest(
+        (headers) => http.get(
+          Uri.parse('$_baseUrl/api/v1/queue-info'),
+          headers: headers,
+        ),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 204) {
+        // No queue
+        return null;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Toggle shuffle
+  Future<void> toggleShuffle() async {
+    await _post('/api/v1/shuffle');
+  }
+
+  /// Get shuffle state
+  Future<bool?> getShuffleState() async {
+    try {
+      final response = await _authorizedRequest(
+        (headers) => http.get(
+          Uri.parse('$_baseUrl/api/v1/shuffle'),
+          headers: headers,
+        ),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['state'] as bool?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Go forward by seconds
+  Future<void> goForward(int seconds) async {
+    await _post('/api/v1/go-forward', body: {'seconds': seconds});
+  }
+
+  /// Go back by seconds
+  Future<void> goBack(int seconds) async {
+    await _post('/api/v1/go-back', body: {'seconds': seconds});
   }
 
   /// Cleanup WebSocket connection

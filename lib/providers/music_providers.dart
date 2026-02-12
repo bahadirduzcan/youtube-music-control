@@ -1,15 +1,59 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models/media_status_model.dart';
 import '../data/services/music_api_service.dart';
+import '../data/services/settings_service.dart';
+import '../domain/entities/connection_config.dart';
+import '../domain/entities/app_theme.dart';
+
+// SharedPreferences provider (async initialization)
+final sharedPreferencesProvider =
+    FutureProvider<SharedPreferences>((ref) async {
+  return await SharedPreferences.getInstance();
+});
+
+// Settings service provider
+final settingsServiceProvider = Provider<SettingsService>((ref) {
+  final prefsAsync = ref.watch(sharedPreferencesProvider);
+  return prefsAsync.when(
+    data: (prefs) => SettingsService(prefs),
+    loading: () => throw Exception('SharedPreferences loading...'),
+    error: (err, stack) => throw Exception('SharedPreferences error: $err'),
+  );
+});
+
+// Theme provider (with initial value from shared preferences)
+final themeProvider = StateProvider<AppTheme>((ref) {
+  // Default to cosmic theme, will be updated after SharedPreferences loads
+  return AppTheme.cosmic;
+});
+
+// Persisted config provider (loads from SharedPreferences)
+final persistedConfigProvider = FutureProvider<ConnectionConfig>((ref) async {
+  final service = ref.watch(settingsServiceProvider);
+  return await service.loadConfig();
+});
+
+// Runtime mutable config provider (for live updates)
+final runtimeConfigProvider = StateProvider<ConnectionConfig?>((ref) => null);
 
 // Configuration provider (can be updated dynamically)
+// Now uses persistent storage instead of hardcoded values
 final musicConfigProvider =
-    StateProvider<({String host, int port, String authId})>((ref) {
-  return (
-    host: '192.168.1.48', // Update with your PC IP
-    port: 8877,
-    authId: 'bahadir', // Update with your auth id
+    Provider<({String host, int port, String authId})>((ref) {
+  // First check runtime config (updated when user saves settings)
+  final runtimeConfig = ref.watch(runtimeConfigProvider);
+  if (runtimeConfig != null) {
+    return runtimeConfig.toRecord();
+  }
+
+  // Otherwise use persisted config from SharedPreferences
+  final persistedAsync = ref.watch(persistedConfigProvider);
+  return persistedAsync.when(
+    data: (config) => config.toRecord(),
+    loading: () => ConnectionConfig.defaults().toRecord(),
+    error: (_, __) => ConnectionConfig.defaults().toRecord(),
   );
 });
 
