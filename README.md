@@ -2,7 +2,7 @@
 
 APP Screen:
 
-[![ff}](https://i.hizliresim.com/btmx893.jpg)](https://hizliresim.com/btmx893)
+[![ff}](https://i.hizliresim.com/5o9vwdk.jpeg)](https://hizliresim.com/5o9vwdk)
 
 > **Control YouTube Music from your Android device over your local network**
 
