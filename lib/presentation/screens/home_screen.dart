@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +25,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   bool _isLiked = false;
   bool _isDisliked = false;
   String? _currentTrackId;
+  Timer? _connectionTimer;
 
   @override
   void initState() {
@@ -32,14 +34,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+    _startConnectionTimer();
   }
 
   @override
   void dispose() {
     _volumeOverlay?.remove();
     _volumeOverlay = null;
+    _connectionTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  void _startConnectionTimer() {
+    _connectionTimer?.cancel();
+    _connectionTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted && _lastValidStatus == null) {
+        setState(() => _errorCount = 10);
+      }
+    });
   }
 
   String _formatTime(int seconds) {
@@ -184,6 +197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     statusAsync.whenData((status) {
       _lastValidStatus = status;
       _errorCount = 0;
+      _connectionTimer?.cancel();
     });
 
     if (statusAsync.hasError) {
@@ -318,6 +332,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ElevatedButton.icon(
                     onPressed: () {
                       setState(() => _errorCount = 0);
+                      _startConnectionTimer();
                       ref.invalidate(statusStreamProvider);
                     },
                     icon: Icon(Icons.refresh_rounded),
@@ -326,6 +341,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       backgroundColor: Color(0xFF00F5FF),
                       foregroundColor: Colors.black,
                       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.settings, size: 20),
+                    label: Text('Settings'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                 ],

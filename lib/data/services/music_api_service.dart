@@ -134,6 +134,7 @@ class MusicApiService {
       _wsChannel = IOWebSocketChannel.connect(
         Uri.parse(_wsUrl),
         headers: _authHeaders(),
+        connectTimeout: const Duration(seconds: 10),
       );
       _reconnectAttempt = 0;
 
