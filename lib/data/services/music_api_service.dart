@@ -114,13 +114,25 @@ class MusicApiService {
   }
 
   /// Refresh status from server and update the stream
+  /// API returns elapsedSeconds: 0 always, so preserve local position
   Future<void> refreshStatus() async {
     try {
       final status = await getStatus();
-      _lastStatus = status;
-      _statusController?.add(status);
+      final preservedPosition =
+          (status.positionMs == 0 && _lastStatus != null && _lastStatus!.positionMs > 0)
+              ? _lastStatus!.positionMs
+              : status.positionMs;
 
-      if (status.state == PlaybackState.playing) {
+      final merged = MediaStatusModel(
+        track: status.track,
+        state: status.state,
+        positionMs: preservedPosition,
+      );
+
+      _lastStatus = merged;
+      _statusController?.add(merged);
+
+      if (merged.state == PlaybackState.playing) {
         _startProgress();
       } else {
         _stopProgress();
@@ -152,20 +164,30 @@ class MusicApiService {
       );
       _reconnectAttempt = 0;
 
-      // Fetch initial status from API if no cached data
-      if (_lastStatus == null) {
-        try {
-          final initialStatus = await getStatus();
-          _lastStatus = initialStatus;
-          _statusController?.add(initialStatus);
+      // Fetch status from API on (re)connect, but preserve local position
+      // since API always returns elapsedSeconds: 0
+      try {
+        final freshStatus = await getStatus();
+        final preservedPosition =
+            (freshStatus.positionMs == 0 && _lastStatus != null && _lastStatus!.positionMs > 0)
+                ? _lastStatus!.positionMs
+                : freshStatus.positionMs;
 
-          // Start progress timer if playing
-          if (initialStatus.state == PlaybackState.playing) {
-            _startProgress();
-          }
-        } catch (e) {
-          // Ignore initial fetch errors, WS will provide updates
+        final merged = MediaStatusModel(
+          track: freshStatus.track,
+          state: freshStatus.state,
+          positionMs: preservedPosition,
+        );
+        _lastStatus = merged;
+        _statusController?.add(merged);
+
+        if (merged.state == PlaybackState.playing) {
+          _startProgress();
+        } else {
+          _stopProgress();
         }
+      } catch (e) {
+        // Ignore fetch errors, WS will provide updates
       }
 
       _wsChannel!.stream.listen(

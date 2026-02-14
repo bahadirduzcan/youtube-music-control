@@ -11,14 +11,7 @@ class MediaStatusModel extends MediaStatus {
   factory MediaStatusModel.fromJson(Map<String, dynamic> json) {
     // Handle both camelCase and PascalCase keys (from both old and current .NET versions)
     final PlaybackState playbackState = _parseState(json);
-    final int positionMs = _positionToMs(
-      json['positionMs'] ??
-          json['PositionMs'] ??
-          json['position'] ??
-          json['Position'] ??
-          json['elapsedSeconds'] ??
-          json['ElapsedSeconds'],
-    );
+    final int positionMs = _resolvePositionMs(json);
 
     final Map<String, dynamic> trackJson = (json['song'] ??
             json['track'] ??
@@ -56,14 +49,30 @@ class MediaStatusModel extends MediaStatus {
     );
   }
 
-  static int _positionToMs(dynamic value) {
-    if (value is num) {
-      if (value == 0) return 0;
-      if (value < 1000) {
-        return (value * 1000).round();
-      }
-      return value.round();
+  static int _resolvePositionMs(Map<String, dynamic> json) {
+    // Fields already in milliseconds
+    if (json.containsKey('positionMs') || json.containsKey('PositionMs')) {
+      final v = json['positionMs'] ?? json['PositionMs'];
+      if (v is num) return v.round();
     }
+
+    // Fields in seconds - convert to ms
+    if (json.containsKey('elapsedSeconds') || json.containsKey('ElapsedSeconds')) {
+      final v = json['elapsedSeconds'] ?? json['ElapsedSeconds'];
+      if (v is num) return (v * 1000).round();
+    }
+
+    // "position" field - could be seconds (small) or ms (large)
+    if (json.containsKey('position') || json.containsKey('Position')) {
+      final v = json['position'] ?? json['Position'];
+      if (v is num) {
+        if (v == 0) return 0;
+        // If value is small, it's likely seconds
+        if (v < 1000) return (v * 1000).round();
+        return v.round();
+      }
+    }
+
     return 0;
   }
 }

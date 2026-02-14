@@ -13,7 +13,11 @@ void main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -27,25 +31,16 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Load theme from settings after app starts
     _loadTheme();
   }
 
   Future<void> _loadTheme() async {
     try {
-      // Wait for SharedPreferences to be ready
       await ref.read(sharedPreferencesProvider.future);
-
-      // Load saved theme
       final settings = ref.read(settingsServiceProvider);
       final savedTheme = settings.loadTheme();
-
-      // Update theme provider
       ref.read(themeProvider.notifier).state = savedTheme;
-    } catch (e) {
-      // If loading fails, keep default cosmic theme
-      print('Failed to load theme: $e');
-    }
+    } catch (_) {}
   }
 
   @override

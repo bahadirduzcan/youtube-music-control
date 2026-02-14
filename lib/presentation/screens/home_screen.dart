@@ -57,7 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   void _startConnectionTimer() {
     _connectionTimer?.cancel();
-    _connectionTimer = Timer(const Duration(seconds: 10), () {
+    _connectionTimer = Timer(const Duration(seconds: 5), () {
       if (mounted && _lastValidStatus == null) {
         setState(() => _errorCount = 10);
       }
@@ -211,18 +211,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final theme = ThemeConfig(currentTheme);
 
     // Track last valid status and errors
-    statusAsync.whenData((status) {
-      _lastValidStatus = status;
-      _errorCount = 0;
-      _connectionTimer?.cancel();
-    });
+    statusAsync.when(
+      data: (status) {
+        _lastValidStatus = status;
+        _errorCount = 0;
+        _connectionTimer?.cancel();
+      },
+      error: (_, __) {
+        _errorCount++;
+        if (_lastValidStatus == null) {
+          _errorCount = 10;
+        }
+      },
+      loading: () {},
+    );
 
-    if (statusAsync.hasError) {
-      _errorCount++;
+    // Hata durumunu göster
+    final shouldShowError = _errorCount > 3;
+    if (shouldShowError && _lastValidStatus != null) {
+      _lastValidStatus = null;
     }
-
-    // Show error only after 3 consecutive errors
-    final shouldShowError = statusAsync.hasError && _errorCount > 3;
     final effectiveStatus =
         shouldShowError ? null : (_lastValidStatus ?? statusAsync.valueOrNull);
 
@@ -613,9 +621,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               size: 24,
             ),
           ),
-          // Elapsed time
+          // Elapsed time (gerçek konumdan)
           Text(
-            _formatTime(status.elapsedSeconds),
+            _formatTime(status.positionMs ~/ 1000),
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
