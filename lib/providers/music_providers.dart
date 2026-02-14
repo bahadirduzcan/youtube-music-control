@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -97,4 +98,60 @@ final controlProvider =
   // Refresh the status stream after sending control
   // This forces the stream to fetch latest data
   await Future.delayed(const Duration(milliseconds: 200));
+});
+
+// Sleep timer state
+class SleepTimerState {
+  final DateTime? endTime;
+  const SleepTimerState({this.endTime});
+
+  bool get isActive => endTime != null && DateTime.now().isBefore(endTime!);
+
+  Duration get remaining =>
+      isActive ? endTime!.difference(DateTime.now()) : Duration.zero;
+}
+
+class SleepTimerNotifier extends StateNotifier<SleepTimerState> {
+  final Ref ref;
+  Timer? _fireTimer;
+  Timer? _tickTimer;
+
+  SleepTimerNotifier(this.ref) : super(const SleepTimerState());
+
+  void start(Duration duration) {
+    cancel();
+    final end = DateTime.now().add(duration);
+    state = SleepTimerState(endTime: end);
+
+    _fireTimer = Timer(duration, _onTimerFired);
+    _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      // Re-emit state so UI rebuilds with updated remaining time
+      state = SleepTimerState(endTime: end);
+    });
+  }
+
+  void cancel() {
+    _fireTimer?.cancel();
+    _tickTimer?.cancel();
+    state = const SleepTimerState();
+  }
+
+  void _onTimerFired() {
+    try {
+      ref.read(musicApiServiceProvider).sendControl('pause');
+    } catch (_) {}
+    cancel();
+  }
+
+  @override
+  void dispose() {
+    _fireTimer?.cancel();
+    _tickTimer?.cancel();
+    super.dispose();
+  }
+}
+
+final sleepTimerProvider =
+    StateNotifierProvider<SleepTimerNotifier, SleepTimerState>((ref) {
+  return SleepTimerNotifier(ref);
 });

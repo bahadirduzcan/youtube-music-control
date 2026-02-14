@@ -7,7 +7,6 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/media_status_model.dart';
 import '../../domain/entities/media_status.dart';
 import '../models/track_model.dart';
-import '../../domain/entities/track.dart';
 
 class MusicServiceException implements Exception {
   final String message;
@@ -112,6 +111,21 @@ class MusicApiService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Refresh status from server and update the stream
+  Future<void> refreshStatus() async {
+    try {
+      final status = await getStatus();
+      _lastStatus = status;
+      _statusController?.add(status);
+
+      if (status.state == PlaybackState.playing) {
+        _startProgress();
+      } else {
+        _stopProgress();
+      }
+    } catch (_) {}
   }
 
   /// Stream status updates over WebSocket
@@ -244,13 +258,6 @@ class MusicApiService {
 
     _lastStatus = merged;
     _statusController?.add(merged);
-
-    // Update progress state based on merged state
-    if (merged.state == PlaybackState.playing) {
-      _startProgress();
-    } else {
-      _stopProgress();
-    }
   }
 
   MediaStatusModel _mergeStatus(
@@ -290,43 +297,13 @@ class MusicApiService {
     );
 
     final mergedState = hasState ? incoming.state : last.state;
-    var mergedPosition = hasPosition ? incoming.positionMs : last.positionMs;
-
-    final trackChanged = _isTrackChange(incoming.track, last.track);
-    if (hasPosition && mergedState == PlaybackState.playing) {
-      // Check if position change is a seek operation (user manually changed position)
-      final positionDiff = (last.positionMs - mergedPosition).abs();
-      final isSeek =
-          positionDiff > 3000; // 3+ seconds = likely a seek operation
-
-      // Only prevent small backward jumps (not seek operations)
-      if (!trackChanged && mergedPosition < last.positionMs && !isSeek) {
-        mergedPosition = last.positionMs;
-      }
-    }
+    final mergedPosition = hasPosition ? incoming.positionMs : last.positionMs;
 
     return MediaStatusModel(
       track: mergedTrack,
       state: mergedState,
       positionMs: mergedPosition,
     );
-  }
-
-  bool _isTrackChange(Track incoming, Track last) {
-    if (incoming.title.isNotEmpty && incoming.title != last.title) {
-      return true;
-    }
-    if (incoming.artist.isNotEmpty && incoming.artist != last.artist) {
-      return true;
-    }
-    if (incoming.durationMs > 0 && incoming.durationMs != last.durationMs) {
-      return true;
-    }
-    if (incoming.albumArtUrl != null &&
-        incoming.albumArtUrl != last.albumArtUrl) {
-      return true;
-    }
-    return false;
   }
 
   void _startProgress() {

@@ -20,6 +20,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late TextEditingController _hostController;
   late TextEditingController _portController;
   late TextEditingController _authIdController;
+  final _customMinutesController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -37,6 +38,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _hostController.dispose();
     _portController.dispose();
     _authIdController.dispose();
+    _customMinutesController.dispose();
     super.dispose();
   }
 
@@ -122,7 +124,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white.withValues(alpha: 0.9)),
+            icon: Icon(Icons.arrow_back,
+                color: Colors.white.withValues(alpha: 0.9)),
             onPressed: () => Navigator.pop(context),
           ),
           SizedBox(width: 8),
@@ -148,6 +151,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: EdgeInsets.all(24),
         children: [
           _buildGlassCard(),
+          SizedBox(height: 24),
+          _buildSleepTimerCard(),
           SizedBox(height: 24),
           _buildInfoTip(),
         ],
@@ -366,6 +371,251 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSleepTimerCard() {
+    final timerState = ref.watch(sleepTimerProvider);
+    final isActive = timerState.isActive;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Color(0xFF00F5FF).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF00F5FF).withValues(alpha: 0.2),
+            blurRadius: 20,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05),
+                ],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.bedtime_rounded,
+                        color: Color(0xFF00F5FF), size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Sleep Timer',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    if (isActive) ...[
+                      Spacer(),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF00F5FF),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                SizedBox(height: 16),
+                if (isActive)
+                  _buildActiveTimer(timerState)
+                else
+                  _buildTimerOptions(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveTimer(SleepTimerState timerState) {
+    final remaining = timerState.remaining;
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes.remainder(60);
+    final seconds = remaining.inSeconds.remainder(60);
+    final timeStr = hours > 0
+        ? '${hours}h ${minutes.toString().padLeft(2, '0')}m ${seconds.toString().padLeft(2, '0')}s'
+        : '$minutes:${seconds.toString().padLeft(2, '0')}';
+
+    return Column(
+      children: [
+        Text(
+          timeStr,
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF00F5FF),
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          'Music will pause automatically',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.5),
+          ),
+        ),
+        SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              ref.read(sleepTimerProvider.notifier).cancel();
+            },
+            icon: Icon(Icons.close, size: 18),
+            label: Text('Cancel Timer'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Color(0xFFFF0080),
+              side: BorderSide(color: Color(0xFFFF0080).withValues(alpha: 0.5)),
+              padding: EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimerOptions() {
+    const presets = [
+      (label: '15m', minutes: 15),
+      (label: '30m', minutes: 30),
+      (label: '45m', minutes: 45),
+      (label: '1h', minutes: 60),
+    ];
+
+    return Column(
+      children: [
+        Row(
+          children: presets.map((preset) {
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () {
+                    ref
+                        .read(sleepTimerProvider.notifier)
+                        .start(Duration(minutes: preset.minutes));
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Color(0xFF00F5FF).withValues(alpha: 0.3),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      preset.label,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _customMinutesController,
+                keyboardType: TextInputType.number,
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Minutes',
+                  hintStyle: GoogleFonts.poppins(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.05),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Color(0xFF00F5FF).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Color(0xFF00F5FF).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Color(0xFF00F5FF),
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+            ),
+            SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: () {
+                final minutes =
+                    int.tryParse(_customMinutesController.text.trim());
+                if (minutes != null && minutes > 0) {
+                  ref
+                      .read(sleepTimerProvider.notifier)
+                      .start(Duration(minutes: minutes));
+                  _customMinutesController.clear();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF00F5FF),
+                foregroundColor: Colors.black,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Start',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
