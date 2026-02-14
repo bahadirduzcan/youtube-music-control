@@ -92,7 +92,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
                         width: 300,
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                         decoration: BoxDecoration(
                           color: Color(0xFF2A2A3A).withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(24),
@@ -132,10 +133,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   child: SliderTheme(
                                     data: SliderThemeData(
                                       trackHeight: 4,
-                                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
-                                      overlayShape: RoundSliderOverlayShape(overlayRadius: 12),
+                                      thumbShape: RoundSliderThumbShape(
+                                          enabledThumbRadius: 6),
+                                      overlayShape: RoundSliderOverlayShape(
+                                          overlayRadius: 12),
                                       activeTrackColor: Color(0xFF00F5FF),
-                                      inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
+                                      inactiveTrackColor:
+                                          Colors.white.withValues(alpha: 0.2),
                                       thumbColor: Colors.white,
                                     ),
                                     child: Slider(
@@ -144,11 +148,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                       max: 100,
                                       onChanged: (value) {
                                         setOverlayState(() {
-                                          ref.read(volumeProvider.notifier).state = value;
+                                          ref
+                                              .read(volumeProvider.notifier)
+                                              .state = value;
                                         });
                                       },
                                       onChangeEnd: (value) async {
-                                        await ref.read(musicApiServiceProvider).setVolume(value);
+                                        await ref
+                                            .read(musicApiServiceProvider)
+                                            .setVolume(value);
                                       },
                                     ),
                                   ),
@@ -258,15 +266,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
             ),
           SafeArea(
-            child: _buildContent(effectiveStatus, shouldShowError, volumeValue, theme),
+            child: _buildContent(
+                effectiveStatus, shouldShowError, volumeValue, theme),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent(
-      MediaStatus? effectiveStatus, bool shouldShowError, double volumeValue, ThemeConfig theme) {
+  Widget _buildContent(MediaStatus? effectiveStatus, bool shouldShowError,
+      double volumeValue, ThemeConfig theme) {
     if (effectiveStatus == null && shouldShowError) {
       return _buildErrorState(theme);
     }
@@ -340,7 +349,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF00F5FF),
                       foregroundColor: Colors.black,
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -390,7 +400,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildMainContent(MediaStatus status, double volumeValue, ThemeConfig theme) {
+  Widget _buildMainContent(
+      MediaStatus status, double volumeValue, ThemeConfig theme) {
     // Reset like/dislike state when track changes
     final trackId = '${status.track.title}_${status.track.artist}';
     if (_currentTrackId != trackId) {
@@ -452,7 +463,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.queue_music, color: Colors.white.withValues(alpha: 0.7)),
+              icon: Icon(Icons.queue_music,
+                  color: Colors.white.withValues(alpha: 0.7)),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -464,12 +476,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             Builder(
               builder: (context) => IconButton(
-                icon: Icon(Icons.volume_up, color: Colors.white.withValues(alpha: 0.7)),
+                icon: Icon(Icons.volume_up,
+                    color: Colors.white.withValues(alpha: 0.7)),
                 onPressed: () => _showVolumeOverlay(context, volumeValue),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.settings, color: Colors.white.withValues(alpha: 0.7)),
+              icon: Icon(Icons.settings,
+                  color: Colors.white.withValues(alpha: 0.7)),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -610,7 +624,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     final width = constraints.maxWidth;
                     final localPosition = details.localPosition.dx;
                     final percentage = (localPosition / width).clamp(0.0, 1.0);
-                    final positionMs = (status.track.durationMs * percentage).round();
+                    final positionMs =
+                        (status.track.durationMs * percentage).round();
                     ref.read(musicApiServiceProvider).seekTo(positionMs);
                   },
                   child: Stack(
@@ -734,7 +749,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               IconButton(
                 onPressed: () async {
                   try {
-                    await ref.read(musicApiServiceProvider).sendControl('previous');
+                    await ref
+                        .read(musicApiServiceProvider)
+                        .sendControl('previous');
                   } catch (e) {}
                 },
                 icon: Icon(
@@ -747,7 +764,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               GestureDetector(
                 onTap: () async {
                   try {
-                    final action = status.state == PlaybackState.playing ? 'pause' : 'play';
+                    final action = status.state == PlaybackState.playing
+                        ? 'pause'
+                        : 'play';
                     await ref.read(musicApiServiceProvider).sendControl(action);
                   } catch (e) {}
                 },
