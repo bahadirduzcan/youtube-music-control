@@ -17,8 +17,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  late AnimationController _pulseController;
+    with WidgetsBindingObserver {
   MediaStatus? _lastValidStatus;
   int _errorCount = 0;
   OverlayEntry? _volumeOverlay;
@@ -31,10 +30,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
     _startConnectionTimer();
   }
 
@@ -44,7 +39,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _volumeOverlay?.remove();
     _volumeOverlay = null;
     _connectionTimer?.cancel();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -669,7 +663,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                       // Thumb
                       Positioned(
-                        left: (constraints.maxWidth * status.progress) - 6,
+                        left: ((constraints.maxWidth * status.progress) - 6).clamp(0.0, constraints.maxWidth - 12),
                         top: -4,
                         child: Container(
                           width: 12,

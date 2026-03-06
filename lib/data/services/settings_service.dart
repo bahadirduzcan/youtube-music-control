@@ -41,6 +41,9 @@ class SettingsService {
   /// Load app theme preference
   AppTheme loadTheme() {
     final themeIndex = _prefs.getInt(_keyTheme) ?? AppTheme.cosmic.index;
+    if (themeIndex < 0 || themeIndex >= AppTheme.values.length) {
+      return AppTheme.cosmic;
+    }
     return AppTheme.values[themeIndex];
   }
 

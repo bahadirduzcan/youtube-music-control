@@ -32,6 +32,7 @@ class MusicApiService {
   int _reconnectAttempt = 0;
   bool _isConnecting = false;
   bool _disposed = false;
+  bool _isProgressRunning = false;
   double? _lastVolume;
   MediaStatusModel? _lastStatus;
 
@@ -118,6 +119,7 @@ class MusicApiService {
   Future<void> refreshStatus() async {
     try {
       final status = await getStatus();
+      final previousState = _lastStatus?.state;
       final preservedPosition =
           (status.positionMs == 0 && _lastStatus != null && _lastStatus!.positionMs > 0)
               ? _lastStatus!.positionMs
@@ -132,10 +134,13 @@ class MusicApiService {
       _lastStatus = merged;
       _statusController?.add(merged);
 
-      if (merged.state == PlaybackState.playing) {
-        _startProgress();
-      } else {
-        _stopProgress();
+      // Timer'ı sadece state değiştiyse veya ilk kez geliyorsa yönet
+      if (merged.state != previousState || previousState == null) {
+        if (merged.state == PlaybackState.playing) {
+          _startProgress();
+        } else {
+          _stopProgress();
+        }
       }
     } catch (_) {}
   }
@@ -168,6 +173,7 @@ class MusicApiService {
       // since API always returns elapsedSeconds: 0
       try {
         final freshStatus = await getStatus();
+        final previousState = _lastStatus?.state;
         final preservedPosition =
             (freshStatus.positionMs == 0 && _lastStatus != null && _lastStatus!.positionMs > 0)
                 ? _lastStatus!.positionMs
@@ -181,10 +187,13 @@ class MusicApiService {
         _lastStatus = merged;
         _statusController?.add(merged);
 
-        if (merged.state == PlaybackState.playing) {
-          _startProgress();
-        } else {
-          _stopProgress();
+        // Timer'ı sadece state değiştiyse veya ilk bağlantıysa yönet
+        if (merged.state != previousState || previousState == null) {
+          if (merged.state == PlaybackState.playing) {
+            _startProgress();
+          } else {
+            _stopProgress();
+          }
         }
       } catch (e) {
         // Ignore fetch errors, WS will provide updates
@@ -245,6 +254,7 @@ class MusicApiService {
     final isStateChangeOnly = eventType == 'PLAYER_STATE_CHANGED';
 
     final incoming = MediaStatusModel.fromJson(json);
+    final previousState = _lastStatus?.state;
 
     // Check if YTM is closed (no track info)
     final hasValidTrack = incoming.track.title.isNotEmpty ||
@@ -267,19 +277,21 @@ class MusicApiService {
         state: PlaybackState.stopped,
         positionMs: 0,
       );
-      _stopProgress();
     } else {
       merged = _mergeStatus(incoming, json);
+    }
 
+    _lastStatus = merged;
+    _statusController?.add(merged);
+
+    // Timer'ı sadece state DEĞİŞTİĞİNDE yönet, her mesajda değil
+    if (merged.state != previousState) {
       if (merged.state == PlaybackState.playing) {
         _startProgress();
       } else {
         _stopProgress();
       }
     }
-
-    _lastStatus = merged;
-    _statusController?.add(merged);
   }
 
   MediaStatusModel _mergeStatus(
@@ -329,35 +341,54 @@ class MusicApiService {
   }
 
   void _startProgress() {
-    _progressTimer?.cancel();
+    // Zaten çalışıyorsa tekrar başlatma — timer leak'in ana sebebi buydu
+    if (_isProgressRunning) return;
 
-    // First tick after 300ms for faster UI update on track change
-    _progressTimer = Timer(const Duration(milliseconds: 300), () {
-      if (_disposed || _lastStatus?.state != PlaybackState.playing) return;
-      _doProgressTick();
+    _stopProgress();
+    _isProgressRunning = true;
 
-      // Then continue with normal 1-second intervals
-      _progressTimer = Timer.periodic(
-        const Duration(seconds: 1),
-        (_) => _doProgressTick(),
-      );
-    });
+    _progressTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _doProgressTick(),
+    );
   }
 
   void _doProgressTick() {
-    if (_disposed) return;
+    if (_disposed) {
+      _stopProgress();
+      return;
+    }
     final current = _lastStatus;
-    if (current == null || current.state != PlaybackState.playing) return;
+    if (current == null || current.state != PlaybackState.playing) {
+      _stopProgress();
+      return;
+    }
 
     final nextPosition = current.positionMs + 1000;
     final duration = current.track.durationMs;
-    final clamped =
-        duration > 0 ? nextPosition.clamp(0, duration) : nextPosition;
+
+    // Duration bilinmiyorsa (0) timer'ı durdur, süre sınırsız artmasın
+    if (duration <= 0) {
+      _stopProgress();
+      return;
+    }
+
+    // Şarkı süresine ulaştıysa artık artırma
+    if (nextPosition >= duration) {
+      _lastStatus = MediaStatusModel(
+        track: current.track,
+        state: current.state,
+        positionMs: duration,
+      );
+      _statusController?.add(_lastStatus!);
+      _stopProgress();
+      return;
+    }
 
     _lastStatus = MediaStatusModel(
       track: current.track,
       state: current.state,
-      positionMs: clamped.toInt(),
+      positionMs: nextPosition,
     );
     _statusController?.add(_lastStatus!);
   }
@@ -365,6 +396,7 @@ class MusicApiService {
   void _stopProgress() {
     _progressTimer?.cancel();
     _progressTimer = null;
+    _isProgressRunning = false;
   }
 
   /// Send a control command (play, pause, next, prev, stop)
@@ -401,16 +433,40 @@ class MusicApiService {
           throw MusicServiceException('Unsupported action: $action');
       }
 
-      // If no status cached yet, fetch it now to ensure UI updates
-      if (_lastStatus == null) {
-        try {
-          final status = await getStatus();
-          _lastStatus = status;
-          _statusController?.add(status);
+      // play/pause zaten _applyLocalPlaybackState ile state güncelledi,
+      // getStatus ile tekrar çekmek race condition yaratır (API geç günceller).
+      // Sadece local state güncellemesi OLMAYAN aksiyonlarda fetch yap.
+      final needsFetch = action == 'togglePlay' ||
+          action == 'previous' ||
+          action == 'next' ||
+          _lastStatus == null;
 
-          // Start progress timer if playing
-          if (status.state == PlaybackState.playing) {
-            _startProgress();
+      if (needsFetch) {
+        try {
+          await Future.delayed(const Duration(milliseconds: 300));
+          final status = await getStatus();
+
+          // API elapsedSeconds:0 dönüyorsa ve local'de position varsa koru
+          final preservedPosition =
+              (status.positionMs == 0 && _lastStatus != null && _lastStatus!.positionMs > 0)
+                  ? _lastStatus!.positionMs
+                  : status.positionMs;
+
+          final previousState = _lastStatus?.state;
+          final merged = MediaStatusModel(
+            track: status.track,
+            state: status.state,
+            positionMs: preservedPosition,
+          );
+          _lastStatus = merged;
+          _statusController?.add(merged);
+
+          if (merged.state != previousState || previousState == null) {
+            if (merged.state == PlaybackState.playing) {
+              _startProgress();
+            } else {
+              _stopProgress();
+            }
           }
         } catch (e) {
           // Ignore fetch errors, WS will eventually provide updates
@@ -421,21 +477,26 @@ class MusicApiService {
     }
   }
 
-  void _applyLocalPlaybackState(PlaybackState state) {
+  void _applyLocalPlaybackState(PlaybackState newState) {
     final current = _lastStatus;
     if (current == null) return;
 
+    final previousState = current.state;
+
     _lastStatus = MediaStatusModel(
       track: current.track,
-      state: state,
+      state: newState,
       positionMs: current.positionMs,
     );
     _statusController?.add(_lastStatus!);
 
-    if (state == PlaybackState.playing) {
-      _startProgress();
-    } else {
-      _stopProgress();
+    // Timer'ı sadece state gerçekten değiştiyse yönet
+    if (newState != previousState) {
+      if (newState == PlaybackState.playing) {
+        _startProgress();
+      } else {
+        _stopProgress();
+      }
     }
   }
 
@@ -607,7 +668,7 @@ class MusicApiService {
   void dispose() {
     _disposed = true;
     _reconnectTimer?.cancel();
-    _progressTimer?.cancel();
+    _stopProgress();
     _wsChannel?.sink.close();
     _statusController?.close();
   }
