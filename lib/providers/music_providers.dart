@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,6 +8,9 @@ import '../data/services/music_api_service.dart';
 import '../data/services/settings_service.dart';
 import '../domain/entities/connection_config.dart';
 import '../domain/entities/app_theme.dart';
+
+// Locale provider
+final localeProvider = StateProvider<Locale?>((ref) => null);
 
 // SharedPreferences provider (async initialization)
 final sharedPreferencesProvider =
@@ -19,8 +23,8 @@ final settingsServiceProvider = Provider<SettingsService>((ref) {
   final prefsAsync = ref.watch(sharedPreferencesProvider);
   return prefsAsync.when(
     data: (prefs) => SettingsService(prefs),
-    loading: () => throw Exception('SharedPreferences loading...'),
-    error: (err, stack) => throw Exception('SharedPreferences error: $err'),
+    loading: () => throw StateError('SharedPreferences not yet initialized'),
+    error: (err, stack) => throw StateError('SharedPreferences failed: $err'),
   );
 });
 
@@ -91,13 +95,11 @@ final statusProvider = FutureProvider<MediaStatusModel>((ref) async {
 final volumeProvider = StateProvider<double>((ref) => 25);
 
 // Control command provider - executes command and refreshes status
+// Uses ref.read to prevent phantom re-execution on provider rebuild
 final controlProvider =
     FutureProvider.family<void, String>((ref, action) async {
-  final service = ref.watch(musicApiServiceProvider);
+  final service = ref.read(musicApiServiceProvider);
   await service.sendControl(action);
-  // Refresh the status stream after sending control
-  // This forces the stream to fetch latest data
-  await Future.delayed(const Duration(milliseconds: 200));
 });
 
 // Sleep timer state
@@ -107,8 +109,11 @@ class SleepTimerState {
 
   bool get isActive => endTime != null && DateTime.now().isBefore(endTime!);
 
-  Duration get remaining =>
-      isActive ? endTime!.difference(DateTime.now()) : Duration.zero;
+  Duration get remaining {
+    if (!isActive) return Duration.zero;
+    final diff = endTime!.difference(DateTime.now());
+    return diff.isNegative ? Duration.zero : diff;
+  }
 }
 
 class SleepTimerNotifier extends StateNotifier<SleepTimerState> {
@@ -125,21 +130,29 @@ class SleepTimerNotifier extends StateNotifier<SleepTimerState> {
 
     _fireTimer = Timer(duration, _onTimerFired);
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      // Re-emit state so UI rebuilds with updated remaining time
+      if (_fireTimer == null) return; // already cancelled/fired
       state = SleepTimerState(endTime: end);
     });
   }
 
   void cancel() {
     _fireTimer?.cancel();
+    _fireTimer = null;
     _tickTimer?.cancel();
+    _tickTimer = null;
     state = const SleepTimerState();
   }
 
-  void _onTimerFired() {
-    try {
-      ref.read(musicApiServiceProvider).sendControl('pause');
-    } catch (_) {}
+  void _onTimerFired() async {
+    // Retry up to 3 times to ensure pause is delivered
+    for (int i = 0; i < 3; i++) {
+      try {
+        await ref.read(musicApiServiceProvider).sendControl('pause');
+        break;
+      } catch (_) {
+        if (i < 2) await Future.delayed(const Duration(seconds: 1));
+      }
+    }
     cancel();
   }
 

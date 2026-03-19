@@ -6,7 +6,7 @@ class ConnectionValidators {
   /// Returns error message if invalid, null if valid
   static String? validateHost(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Host gerekli';
+      return 'Host is required';
     }
 
     final trimmed = value.trim();
@@ -19,7 +19,7 @@ class ConnectionValidators {
       for (final part in parts) {
         final num = int.tryParse(part);
         if (num == null || num < 0 || num > 255) {
-          return 'Geçersiz IP adresi (0-255 arası)';
+          return 'Invalid IP address (0-255 range)';
         }
       }
       return null; // Valid IPv4
@@ -33,24 +33,24 @@ class ConnectionValidators {
       return null; // Valid hostname
     }
 
-    return 'Geçerli IP adresi veya hostname girin';
+    return 'Enter a valid IP address or hostname';
   }
 
   /// Validates port number (1-65535)
   /// Returns error message if invalid, null if valid
   static String? validatePort(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Port gerekli';
+      return 'Port is required';
     }
 
     final port = int.tryParse(value.trim());
 
     if (port == null) {
-      return 'Port sayı olmalı';
+      return 'Port must be a number';
     }
 
     if (port < 1 || port > 65535) {
-      return 'Port 1-65535 arası olmalı';
+      return 'Port must be between 1-65535';
     }
 
     return null; // Valid port
@@ -60,13 +60,13 @@ class ConnectionValidators {
   /// Returns error message if invalid, null if valid
   static String? validateAuthId(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Auth ID gerekli';
+      return 'Auth ID is required';
     }
 
     final trimmed = value.trim();
 
     if (trimmed.length < 3) {
-      return 'Auth ID en az 3 karakter olmalı';
+      return 'Auth ID must be at least 3 characters';
     }
 
     return null; // Valid auth ID

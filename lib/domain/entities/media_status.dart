@@ -24,7 +24,14 @@ class MediaStatus {
     return (positionMs / track.durationMs).clamp(0, 1);
   }
 
-  int get elapsedSeconds => (positionMs ~/ 1000);
+  int get elapsedSeconds {
+    final elapsed = positionMs ~/ 1000;
+    final total = track.durationMs ~/ 1000;
+    // Never show elapsed time beyond total duration
+    if (total > 0 && elapsed > total) return total;
+    return elapsed;
+  }
+
   int get totalSeconds => (track.durationMs ~/ 1000);
 
   @override

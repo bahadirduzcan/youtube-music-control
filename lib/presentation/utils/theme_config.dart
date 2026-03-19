@@ -158,4 +158,28 @@ class ThemeConfig {
         ];
     }
   }
+
+  /// Overlay/dialog background color
+  Color get overlayBackgroundColor {
+    switch (theme) {
+      case AppTheme.light:
+        return Colors.white.withValues(alpha: 0.95);
+      case AppTheme.dark:
+        return Color(0xFF2A2A3A).withValues(alpha: 0.95);
+      case AppTheme.cosmic:
+        return Color(0xFF1A1535).withValues(alpha: 0.95);
+    }
+  }
+
+  /// Error/danger color
+  Color get errorColor {
+    switch (theme) {
+      case AppTheme.light:
+        return Color(0xFFD32F2F);
+      case AppTheme.dark:
+        return Color(0xFFFF4081);
+      case AppTheme.cosmic:
+        return Color(0xFFFF0080);
+    }
+  }
 }

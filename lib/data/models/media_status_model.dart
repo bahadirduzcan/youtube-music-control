@@ -13,7 +13,10 @@ class MediaStatusModel extends MediaStatus {
     final PlaybackState playbackState = _parseState(json);
     final int positionMs = _resolvePositionMs(json);
 
+    // API returns all fields at root level (no nested song/track object).
+    // Check for nested object first, fall back to root json.
     final Map<String, dynamic> trackJson = (json['song'] ??
+            json['Song'] ??
             json['track'] ??
             json['Track']) as Map<String, dynamic>? ??
         json;
@@ -26,25 +29,35 @@ class MediaStatusModel extends MediaStatus {
   }
 
   Map<String, dynamic> toJson() => {
-        'track': (track as TrackModel).toJson(),
+        'track': track is TrackModel
+            ? (track as TrackModel).toJson()
+            : {'title': track.title, 'artist': track.artist, 'album': track.album, 'albumArtUrl': track.albumArtUrl, 'durationMs': track.durationMs},
         'state': state.name,
         'positionMs': positionMs,
       };
 
+  /// Safely convert dynamic value to bool (handles bool, int, String)
+  static bool _toBool(dynamic value, {bool defaultValue = false}) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return defaultValue;
+  }
+
   static PlaybackState _parseState(Map<String, dynamic> json) {
-    if (json.containsKey('isPlaying') || json.containsKey('IsPlaying')) {
-      final isPlaying = json['isPlaying'] ?? json['IsPlaying'] ?? false;
-      return (isPlaying == true) ? PlaybackState.playing : PlaybackState.paused;
+    final isPlayingVal = json['isPlaying'] ?? json['IsPlaying'];
+    if (isPlayingVal != null) {
+      return _toBool(isPlayingVal) ? PlaybackState.playing : PlaybackState.paused;
     }
 
-    if (json.containsKey('isPaused') || json.containsKey('IsPaused')) {
-      final isPaused = json['isPaused'] ?? json['IsPaused'] ?? true;
-      return (isPaused == true) ? PlaybackState.paused : PlaybackState.playing;
+    final isPausedVal = json['isPaused'] ?? json['IsPaused'];
+    if (isPausedVal != null) {
+      return _toBool(isPausedVal, defaultValue: true) ? PlaybackState.paused : PlaybackState.playing;
     }
 
-    final playbackStateStr = json['state'] ?? json['State'] ?? 'stopped';
+    final playbackStateStr = (json['state'] ?? json['State'])?.toString().toLowerCase() ?? 'stopped';
     return PlaybackState.values.firstWhere(
-      (e) => e.name == playbackStateStr.toString().toLowerCase(),
+      (e) => e.name == playbackStateStr,
       orElse: () => PlaybackState.stopped,
     );
   }

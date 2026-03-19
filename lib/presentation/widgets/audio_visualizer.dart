@@ -12,7 +12,7 @@ class AudioVisualizer extends StatefulWidget {
     super.key,
     required this.isPlaying,
     this.color = const Color(0xFF00F5FF),
-    this.barCount = 40,
+    this.barCount = 24,
     this.height = 60,
   });
 
@@ -44,7 +44,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
           setState(() {
             // Randomly update bar heights for animation effect
             for (int i = 0; i < _barHeights.length; i++) {
-              if (_random.nextDouble() > 0.7) {
+              if (_random.nextDouble() > 0.6) {
                 _barHeights[i] = _random.nextDouble() * 0.8 + 0.2;
               }
             }
@@ -84,43 +84,45 @@ class _AudioVisualizerState extends State<AudioVisualizer>
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.height,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(widget.barCount, (index) {
-          final barHeight = _barHeights[index] * widget.height;
-          final delay = index * 0.02;
+    return RepaintBoundary(
+      child: SizedBox(
+        height: widget.height,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: List.generate(widget.barCount, (index) {
+            final barHeight = _barHeights[index] * widget.height;
+            final delay = index * 0.02;
 
-          return AnimatedContainer(
-            duration: Duration(milliseconds: 150 + (delay * 1000).toInt()),
-            curve: Curves.easeInOut,
-            width: 3,
-            height: widget.isPlaying ? barHeight : 4,
-            margin: EdgeInsets.symmetric(horizontal: 1),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  widget.color,
-                  widget.color.withValues(alpha: 0.5),
-                ],
+            return AnimatedContainer(
+              duration: Duration(milliseconds: 150 + (delay * 1000).toInt()),
+              curve: Curves.easeInOut,
+              width: 3,
+              height: widget.isPlaying ? barHeight : 4,
+              margin: EdgeInsets.symmetric(horizontal: 1),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    widget.color,
+                    widget.color.withValues(alpha: 0.5),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: widget.isPlaying
+                    ? [
+                        BoxShadow(
+                          color: widget.color.withValues(alpha: 0.5),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : [],
               ),
-              borderRadius: BorderRadius.circular(2),
-              boxShadow: widget.isPlaying
-                  ? [
-                      BoxShadow(
-                        color: widget.color.withValues(alpha: 0.5),
-                        blurRadius: 4,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : [],
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }

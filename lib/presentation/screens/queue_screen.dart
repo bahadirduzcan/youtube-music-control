@@ -60,13 +60,8 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0A0E27),
-              Color(0xFF1A1535),
-              Color(0xFF0D1B2A),
-              Color(0xFF0A1128),
-            ],
-            stops: [0.0, 0.3, 0.6, 1.0],
+            colors: theme.backgroundGradient,
+            stops: const [0.0, 0.3, 0.6, 1.0],
           ),
         ),
         child: SafeArea(
@@ -89,7 +84,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white.withValues(alpha: 0.9)),
+            icon: Icon(Icons.arrow_back, color: theme.textPrimaryColor),
             onPressed: () => Navigator.pop(context),
           ),
           SizedBox(width: 8),
@@ -100,7 +95,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
             style: GoogleFonts.spaceGrotesk(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: theme.textPrimaryColor,
             ),
           ),
         ],
@@ -128,10 +123,10 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
               child: Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(32),
                   border: Border.all(
-                    color: Color(0xFFFF0080).withValues(alpha: 0.3),
+                    color: theme.tertiaryColor.withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -141,7 +136,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                     Icon(
                       Icons.error_outline,
                       size: 64,
-                      color: Color(0xFFFF0080),
+                      color: theme.tertiaryColor,
                     ),
                     SizedBox(height: 16),
                     Text(
@@ -149,7 +144,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: theme.textPrimaryColor,
                       ),
                     ),
                     SizedBox(height: 8),
@@ -157,7 +152,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                       _error!,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: theme.textSecondaryColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -167,7 +162,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                       icon: Icon(Icons.refresh),
                       label: Text('Retry'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF00F5FF),
+                        backgroundColor: theme.primaryColor,
                         foregroundColor: Colors.black,
                         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
@@ -189,14 +184,14 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
             Icon(
               Icons.queue_music,
               size: 64,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: theme.textSecondaryColor.withValues(alpha: 0.5),
             ),
             SizedBox(height: 16),
             Text(
               'Queue is empty',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.white.withValues(alpha: 0.6),
+                color: theme.textSecondaryColor,
               ),
             ),
           ],
@@ -233,7 +228,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
               style: GoogleFonts.spaceGrotesk(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: theme.textSecondaryColor,
               ),
             ),
             SizedBox(height: 12),
@@ -244,15 +239,15 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                 child: Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Color(0xFF00F5FF).withValues(alpha: 0.2),
+                      color: theme.primaryColor.withValues(alpha: 0.2),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0xFF00F5FF).withValues(alpha: 0.1),
+                        color: theme.primaryColor.withValues(alpha: 0.1),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
@@ -262,7 +257,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                     JsonEncoder.withIndent('  ').convert(_queueData),
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: theme.textPrimaryColor.withValues(alpha: 0.8),
                     ),
                   ),
                 ),
@@ -356,15 +351,15 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
           child: Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Color(0xFF00F5FF).withValues(alpha: 0.2),
+                color: theme.primaryColor.withValues(alpha: 0.2),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFF00F5FF).withValues(alpha: 0.1),
+                  color: theme.primaryColor.withValues(alpha: 0.1),
                   blurRadius: 10,
                   spreadRadius: 1,
                 ),
@@ -377,14 +372,14 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: Color(0xFF00F5FF).withValues(alpha: 0.15),
+                    color: theme.primaryColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
                     child: Text(
                       '${index + 1}',
                       style: TextStyle(
-                        color: Color(0xFF00F5FF),
+                        color: theme.primaryColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -416,7 +411,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: theme.textPrimaryColor,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -427,7 +422,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                           artist,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.6),
+                            color: theme.textSecondaryColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -444,7 +439,7 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
                       duration,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: theme.textSecondaryColor,
                       ),
                     ),
                   ),
@@ -461,12 +456,12 @@ class _QueueScreenState extends ConsumerState<QueueScreen> {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: Color(0xFF00F5FF).withValues(alpha: 0.1),
+        color: theme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(
         Icons.music_note,
-        color: Color(0xFF00F5FF).withValues(alpha: 0.5),
+        color: theme.primaryColor.withValues(alpha: 0.5),
         size: 24,
       ),
     );

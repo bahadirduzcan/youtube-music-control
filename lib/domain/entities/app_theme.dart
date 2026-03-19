@@ -6,7 +6,7 @@ enum AppTheme {
 }
 
 extension AppThemeExtension on AppTheme {
-  String get name {
+  String get displayName {
     switch (this) {
       case AppTheme.light:
         return 'Aydınlık';
