@@ -375,11 +375,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildAlbumArt(status, theme),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
                 _buildTrackInfo(status, theme),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
                 _buildProgressWithLikes(status, theme),
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
                 _buildGlassControls(status, theme),
               ],
             ),
@@ -611,8 +611,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         if (status.track.title.isNotEmpty)
           Text(
             status.track.title,
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.textPrimaryColor),
-            maxLines: 2,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: theme.textPrimaryColor),
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
           ),
@@ -620,7 +620,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const SizedBox(height: 8),
           Text(
             status.track.artist,
-            style: TextStyle(fontSize: 18, color: theme.primaryColor, fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 15, color: theme.primaryColor, fontWeight: FontWeight.w500),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
