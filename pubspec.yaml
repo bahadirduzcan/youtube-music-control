@@ -49,7 +49,7 @@ dependencies:
   logger: ^2.1.0
 
   # Typography
-  google_fonts: ^6.2.1
+  google_fonts: ^8.1.0
 
   # Local storage
   shared_preferences: ^2.2.2
@@ -95,9 +95,9 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/icons/bahadirlogo.png
+  image_path: assets/icons/bahadirlogo_main.png
   adaptive_icon_background: "#1A1535"
-  adaptive_icon_foreground: assets/icons/bahadirlogo.png
+  adaptive_icon_foreground: assets/icons/bahadirlogo_foreground.png
   min_sdk_android: 21
   remove_alpha_ios: true
 

@@ -85,6 +85,7 @@ final statusStreamProvider = StreamProvider<MediaStatusModel>((ref) {
   return service.statusStream();
 });
 
+
 // One-time status fetch provider
 final statusProvider = FutureProvider<MediaStatusModel>((ref) async {
   final service = ref.watch(musicApiServiceProvider);
