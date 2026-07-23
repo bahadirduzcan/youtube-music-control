@@ -62,28 +62,29 @@ class _FloatingParticlesState extends State<FloatingParticles>
       ));
     }
 
-    // Setup animation controller
+    // Setup animation controller.
+    // Particle positions are advanced on every tick, but we intentionally do
+    // NOT call setState here — that would rebuild the entire widget subtree
+    // ~60 times per second. Instead the painter repaints from this controller
+    // (see build), so only the CustomPaint layer redraws each frame.
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
     )..addListener(() {
-        if (widget.isPlaying && mounted) {
-          setState(() {
-            for (final particle in _particles) {
-              // Update angle for orbital motion
-              particle.angle += particle.speed;
-              if (particle.angle > 2 * math.pi) {
-                particle.angle -= 2 * math.pi;
-              }
+        if (!widget.isPlaying) return;
+        for (final particle in _particles) {
+          // Update angle for orbital motion
+          particle.angle += particle.speed;
+          if (particle.angle > 2 * math.pi) {
+            particle.angle -= 2 * math.pi;
+          }
 
-              // Fade in/out
-              particle.opacity += particle.opacitySpeed;
-              if (particle.opacity >= 1.0 || particle.opacity <= 0.0) {
-                particle.opacitySpeed = -particle.opacitySpeed;
-                particle.opacity = particle.opacity.clamp(0.0, 1.0);
-              }
-            }
-          });
+          // Fade in/out
+          particle.opacity += particle.opacitySpeed;
+          if (particle.opacity >= 1.0 || particle.opacity <= 0.0) {
+            particle.opacitySpeed = -particle.opacitySpeed;
+            particle.opacity = particle.opacity.clamp(0.0, 1.0);
+          }
         }
       });
 
@@ -122,6 +123,7 @@ class _FloatingParticlesState extends State<FloatingParticles>
             particles: _particles,
             color: widget.color,
             isPlaying: widget.isPlaying,
+            repaint: _controller,
           ),
         ),
       ),
@@ -138,7 +140,8 @@ class _ParticlePainter extends CustomPainter {
     required this.particles,
     required this.color,
     required this.isPlaying,
-  });
+    required Listenable repaint,
+  }) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size) {

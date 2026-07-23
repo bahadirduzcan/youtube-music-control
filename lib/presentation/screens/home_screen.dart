@@ -38,6 +38,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _startConnectionTimer();
+    // Sync real player volume once the first frame is ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncVolume());
   }
 
   @override
@@ -51,7 +53,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(musicApiServiceProvider).refreshStatus();
+      _syncVolume();
     }
+  }
+
+  /// Read the current volume from the player so the slider/overlay reflect
+  /// the real value instead of always starting at the default.
+  Future<void> _syncVolume() async {
+    final vol = await ref.read(musicApiServiceProvider).getVolume();
+    if (!mounted || vol == null) return;
+    ref.read(volumeProvider.notifier).state = vol.volume;
+  }
+
+  /// Fetch the like/dislike state of the current track from the server so the
+  /// heart/thumb icons reflect what's actually saved on YouTube Music.
+  Future<void> _syncLikeState(String trackId) async {
+    final state = await ref.read(musicApiServiceProvider).getLikeState();
+    if (!mounted || _currentTrackId != trackId) return;
+    setState(() {
+      _isLiked = state == 'LIKE';
+      _isDisliked = state == 'DISLIKE';
+    });
   }
 
   void _startConnectionTimer() {
@@ -224,7 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               child: Stack(
                 children: [
                   ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+                    imageFilter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
                     child: Image.network(
                       effectiveStatus.track.albumArtUrl!,
                       fit: BoxFit.cover,
@@ -363,6 +385,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _currentTrackId = trackId;
       _isLiked = false;
       _isDisliked = false;
+      // Pull the real like/dislike state for the new track from the server.
+      if (status.track.title.isNotEmpty) {
+        _syncLikeState(trackId);
+      }
     }
 
     return Padding(
@@ -440,6 +466,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     _showShareMenu(context, theme, status);
                     break;
                   case 'volume':
+                    _syncVolume();
                     _showVolumeOverlay(context, theme);
                     break;
                   case 'settings':

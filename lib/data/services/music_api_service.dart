@@ -651,6 +651,35 @@ class MusicApiService {
     await _setVolume(volume.clamp(0, 100).toDouble());
   }
 
+  /// Get current volume state from the server (0-100) and mute state.
+  /// Also caches the value locally so volumeUp/volumeDown operate from the
+  /// real player volume instead of a hardcoded default.
+  Future<({double volume, bool isMuted})?> getVolume() async {
+    try {
+      final response = await _authorizedRequest(
+        (headers) => http.get(
+          Uri.parse('$_baseUrl/api/v1/volume'),
+          headers: headers,
+        ),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final v = (json['state'] as num?)?.toDouble();
+        if (v != null) {
+          _lastVolume = v;
+          return (
+            volume: v.clamp(0, 100).toDouble(),
+            isMuted: json['isMuted'] == true,
+          );
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Seek to specific position in milliseconds
   Future<void> seekTo(int positionMs) async {
     final current = _lastStatus;
